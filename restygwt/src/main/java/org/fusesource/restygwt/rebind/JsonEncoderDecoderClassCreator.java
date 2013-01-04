@@ -140,6 +140,20 @@ public class JsonEncoderDecoderClassCreator extends BaseSourceCreator {
         			possibleTypes.add(new Subtype(nameAnnotation.value(), typeClass));
         		}
         	    }
+
+                // Subtypes for JsonTypeName annotation
+                if (jacksonSubTypes.value().length == 0) {
+                    JsonTypeName nameAnnotation = source.getAnnotation(JsonTypeName.class);
+                    if (nameAnnotation == null || nameAnnotation.value() == null || nameAnnotation.value().isEmpty())
+                        error("Cannot find @JsonTypeName annotation for type: " + source);
+                    JClassType typeClass = source;
+                    if (!isLeaf || source.equals(typeClass))
+                        possibleTypes.add(new Subtype(nameAnnotation.value(), typeClass));
+                    else {
+                        error("JsonTypeName issue");
+                    }
+                }
+
         	    if (isLeaf && possibleTypes.size() == 0)
         		error("Could not find @JsonSubTypes entry for type: " + source);
         	} else if (typeResolver != null) {
@@ -418,6 +432,7 @@ public class JsonEncoderDecoderClassCreator extends BaseSourceCreator {
         	    p("" + possibleType.clazz.getParameterizedQualifiedSourceName() + " rc = new " + possibleType.clazz.getParameterizedQualifiedSourceName() + "(");
         	    i(1).p("// The arguments are placed in the order they appear within the annotated constructor").i(-1);
         	    orderedFields = getOrderedFields(getFields(possibleType.clazz), creator);
+                if (orderedFields.size() > 0) {
         	    final JField lastField = orderedFields.get(orderedFields.size() - 1);
         	    for (final JField field : orderedFields) {
         		branch("Processing field: " + field.getName(), new Branch<Void>() {
@@ -438,6 +453,7 @@ public class JsonEncoderDecoderClassCreator extends BaseSourceCreator {
         		    }
         		});
         	    }
+                }
         	    p(");");
         	}
         	

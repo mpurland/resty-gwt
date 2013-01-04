@@ -26,11 +26,7 @@ import static org.fusesource.restygwt.rebind.BaseSourceCreator.WARN;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.fusesource.restygwt.client.AbstractJsonEncoderDecoder;
 import org.fusesource.restygwt.client.Json;
@@ -173,10 +169,32 @@ public class JsonEncoderDecoderInstanceLocator {
                     error("Map key can't be a collection");
                 }
                 if (!builtInEncoderDecoders.containsKey(types[0])) {
-                    error("Map key can't be an object");
+                    // Do not prevent a Map with an object key from compiling since some keys can be encoded/decoded
+                    // error("Map key can't be an object");
                 }
                 String keyEncoderDecoder = getEncoderDecoder(types[0], logger);
                 encoderDecoder = getEncoderDecoder(types[1], logger);
+
+                // Encoder for Map with value of type List<String>
+                // LIST_STRING is encoder/decoder for List<String>
+                if (encoderDecoder == null && types[1].isAssignableTo(LIST_TYPE)) {
+                    JParameterizedType listParameterizedType = types[1].isParameterized();
+                    JClassType[] listTypes = listParameterizedType.getTypeArgs();
+                    info("list encoding: " + types[1].toString());
+                    if (listTypes.length == 1) {
+                        if (listTypes[0].isAssignableTo(find(String.class))) {
+                            encoderDecoder = JSON_ENCODER_DECODER_CLASS + ".LIST_STRING";
+                            info("list assignable: " + encoderDecoder + Arrays.toString(listTypes));
+                        }
+                        else {
+                            info("list not assignable (no encoder/decoder): " + encoderDecoder + Arrays.toString(listTypes));
+                        }
+                    }
+                    else {
+                        info("list not assignable (wrong size): " + types[1].toString());
+                    }
+                }
+
                 if (encoderDecoder != null && keyEncoderDecoder != null) {
                     return mapMethod + "(" + expression + ", " + keyEncoderDecoder + ", " + encoderDecoder + ", "
                             + JSON_CLASS + ".Style." + style.name() + ")";

@@ -307,6 +307,45 @@ abstract public class AbstractJsonEncoderDecoder<T> implements JsonEncoderDecode
         }
     };
 
+    public static final AbstractJsonEncoderDecoder<List<String>> LIST_STRING = new AbstractJsonEncoderDecoder<List<String>>() {
+
+        public List<String> decode(JSONValue value) throws DecodingException {
+            if (value == null || value.isNull() != null) {
+                return null;
+            }
+            List<String> list = new ArrayList<String>();
+            JSONArray array = value.isArray();
+
+            if (array == null) {
+                throw new DecodingException("Expected a json array, but was given: " + value);
+            }
+
+            for (int i = 0; i < array.size(); i++) {
+                JSONValue v = array.get(i);
+                JSONString str = v.isString();
+                if (str == null) {
+                    throw new DecodingException("Expected a json string, but was given: " + v);
+                }
+                list.add(str.stringValue());
+            }
+
+            return list;
+        }
+
+        public JSONValue encode(List<String> value) throws EncodingException {
+            if (value == null) {
+                return getNullType();
+            }
+
+            JSONArray array = new JSONArray();
+            int index = 0;
+            for (String v : value) {
+                array.set(index++, new JSONString(v));
+            }
+            return array;
+        }
+    };
+
     // /////////////////////////////////////////////////////////////////
     // Helper Methods.
     // /////////////////////////////////////////////////////////////////
